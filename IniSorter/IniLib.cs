@@ -8,9 +8,11 @@ namespace IniSorter
     //Функциональный блок программы
     public static class IniLib
     {
-        //Главный метод, отвечающий за сортировку всех ini-файлов в директории
-        //Принимает в качестве параметра путь к директории, в которой необходимо провести сортировку
-        //Возвращает код глобальной ошибки (например, если не удалось вообще найти директорию), количество отсортированных файлов и количество файлов с ошибками 
+        /*
+            Главный метод, отвечающий за сортировку всех ini-файлов в директории.
+            Принимает в качестве параметра путь к директории, в которой необходимо провести сортировку.
+            Возвращает код глобальной ошибки (например, если не удалось вообще найти директорию), количество отсортированных файлов и количество файлов с ошибками.
+        */
         public static (string globalErrorType, int doneCount, int errorsCount) SortIniFilesInDir(string inputPath)
         {
             string[] iniFiles;
@@ -52,12 +54,14 @@ namespace IniSorter
         }
 
 
-        //Главный метод, отвечающий за сортировку одного ini-файла
-        //Принимает на вход путь (включая название) к сортируемому файлу и путь (включая название), по которому нужно сохранить файл
-        //Возвращает код ошибки или пустую строку, если сортировка прошла успешно
+        /*
+            Главный метод, отвечающий за сортировку одного ini-файла.
+            Принимает на вход путь (включая название) к сортируемому файлу и путь (включая название), по которому нужно сохранить файл.
+            Возвращает код ошибки или пустую строку, если сортировка прошла успешно.
+        */
         public static string SortIniFile(string inputFilePath, string outputFilePath)
         {
-            //Чтение информации из файла
+            // Чтение информации из файла
             string[] fileContent;
             try
             {
@@ -76,7 +80,7 @@ namespace IniSorter
                 return "UnknownReadError";
             }
 
-            //Перенос информации, полученной из файла, в сортированный словарь формата "название-секции : содержание-секции(параметр : значение)"
+            // Перенос информации, полученной из файла, в сортированный словарь формата "название-секции : содержание-секции(параметр : значение)".
             SortedDictionary<string, SortedDictionary<string, string>> iniContent = new SortedDictionary<string, SortedDictionary<string, string>>();
             try
             {
@@ -89,7 +93,7 @@ namespace IniSorter
             if (iniContent.Count == 0)
                 return "IncorrectSyntax";
 
-            //Перенос информации из сортированных словарей в выходной файл
+            // Перенос информации из сортированных словарей в выходной файл.
             string iniFileText = ConvertIniContentToString(iniContent);
             try
             {
@@ -104,8 +108,8 @@ namespace IniSorter
         }
 
 
-        //Метод, разделяющий информацию, считанную из ini-файла, и представляющий её в виде сортированных словарей
-        //Возвращает словарь формата "название-секции : содержание-секции(параметр : значение)"
+        // Метод, разделяющий информацию, считанную из ini-файла, и представляющий её в виде сортированных словарей.
+        // Возвращает словарь формата "название-секции : содержание-секции(параметр : значение)".
         private static SortedDictionary<string, SortedDictionary<string, string>> SeparateIniFileContent(string[] fileContent)
         {
             SortedDictionary<string, SortedDictionary<string, string>> iniContent = new SortedDictionary<string, SortedDictionary<string, string>>();
@@ -118,17 +122,17 @@ namespace IniSorter
                 if (fileContent[i].IndexOf("#") >= 0)
                     fileContent[i] = fileContent[i].Split("#")[0];
 
-                string lineType = GetIniLineType(fileContent[i]);
+                IniLineType lineType = GetIniLineType(fileContent[i]);
                 switch (lineType)
                 {
-                    case "EmptyLine":
+                    case IniLineType.EmptyLine:
                         continue;
-                    case "SectionName":
+                    case IniLineType.SectionName:
                         sectionName = fileContent[i].Trim()[1..^1].Trim();
                         if (!iniContent.ContainsKey(sectionName))
                             iniContent.Add(sectionName, new SortedDictionary<string, string>());
                         break;
-                    case "SectionInner":
+                    case IniLineType.SectionInner:
                         string[] splitedLine = fileContent[i].Split("=");
                         string parameter = splitedLine[0].Trim();
                         string value = splitedLine[1].Trim();
@@ -150,29 +154,29 @@ namespace IniSorter
         }
 
 
-        //Метод, распознающий в переданной строке тот или иной элемент синтаксиса ini-файла (заголовок секции, содержание секции, пустая строка)
-        private static string GetIniLineType(string iniLine)
+        // Возможные типы строк в ini-файле.
+        private enum IniLineType { SectionName, SectionInner, EmptyLine, UnknownType }
+
+
+        // Метод, распознающий в переданной строке тот или иной элемент синтаксиса ini-файла (заголовок секции, содержание секции, пустая строка).
+        private static IniLineType GetIniLineType(string iniLine)
         {
             Regex regSectionName = new Regex(@"^\s*[\[]{1}\s*[a-zA-Z0-9\._\-\\\/%:'""'\*<>]+[^=\[\]]*[\]]{1}\s*$");
             Regex regSectionInner = new Regex(@"^\s*[a-zA-Z0-9\._\-\\\/%:'""'\*<>]+[^=\[\]]*={1}[^=\[\]]*$");
             Regex regEmpty = new Regex(@"^\s*$");
 
-            string iniLineType;
-
             if (regSectionName.IsMatch(iniLine))
-                iniLineType = "SectionName";
+                return IniLineType.SectionName;
             else if (regSectionInner.IsMatch(iniLine))
-                iniLineType = "SectionInner";
+                return IniLineType.SectionInner;
             else if (regEmpty.IsMatch(iniLine))
-                iniLineType = "EmptyLine";
+                return IniLineType.EmptyLine;
             else
-                iniLineType = "UnknownType";
-
-            return iniLineType;
+                return IniLineType.UnknownType;
         }
 
 
-        //Метод, ответственный за "упаковку" содержания ini-файла в строку для последующей записи в ini-файл
+        // Метод, ответственный за "упаковку" содержания ini-файла в строку для последующей записи в ini-файл.
         private static string ConvertIniContentToString(SortedDictionary<string, SortedDictionary<string, string>> iniContent)
         {
             string fileText = "";

@@ -1,16 +1,16 @@
 ﻿using System;
 using System.Text.RegularExpressions;
 
-//IniSorter - программа для сортировки содержания ini-файлов.
-//Перевозкин А. А., 2020 г.
+// IniSorter - программа для сортировки содержания ini-файлов.
+// Перевозкин А. А., 2020-2021 гг.
 
 namespace IniSorter
 {
-    //Интерфейс программы
+    // Интерфейс программы.
     class IniSorterInterface
     {
-        //Главный метод интерфейса программы. Отвечает за обработку команд пользователя, проверку правильности ввода.
-        //Доступно 4 команды: сортировка одного ini-файла, сортировка всех ini-файлов в директории, вывод подсказки, выход из программы.
+        // Главный метод интерфейса программы. Отвечает за обработку команд пользователя, проверку правильности ввода.
+        // Доступно 4 команды: сортировка одного ini-файла, сортировка всех ini-файлов в директории, вывод подсказки, выход из программы.
         static void Main(string[] args)
         {
             Console.WriteLine("Добро пожаловать в программу IniSorter! \nПрограмма предназначена для сортировки содержимого Ваших ini-файлов. \nВсе отсортированный файла сохраняются в ту же директорию с добавление '_Sorted' к названию.");
@@ -20,23 +20,23 @@ namespace IniSorter
             {
                 Console.Write("$ ");
                 string command = Console.ReadLine();
-                string commandType = GetСommandType(command);
+                СommandType commandType = GetСommandType(command);
 
                 string commandArgument;
                 string inputFilePath = "";
                 string inputDirectoryPath = "";
                 
-                if (commandType=="exit")
+                if (commandType == СommandType.Exit)
                     break;
 
                 switch (commandType)
                 {
-                    case "help":
+                    case СommandType.Help:
                         Console.WriteLine(helpText);
                         break;
-                    case "sortfile":
+                    case СommandType.Sortfile:
                         Regex regIniFile = new Regex(@"^.+(\.ini){1}$");
-                        commandArgument = command.Trim().Split("sortfile")[1].Trim();
+                        commandArgument = command.Trim()[8..].Trim();
                         if (commandArgument == "")
                             Console.WriteLine("Название файла не может быть пустым! Попробуйте снова!");
                         else if (!regIniFile.IsMatch(commandArgument))
@@ -44,8 +44,8 @@ namespace IniSorter
                         else
                             inputFilePath = commandArgument;
                         break;
-                    case "sortdir":
-                        commandArgument = command.Trim().Split("sortdir")[1].Trim();
+                    case СommandType.Sortdir:
+                        commandArgument = command.Trim()[7..].Trim();
                         if (commandArgument == "")
                             Console.WriteLine("Путь не может быть пустым! Попробуйте снова!");
                         else
@@ -71,33 +71,32 @@ namespace IniSorter
         }
 
 
-        //Метод, отвечающий за определение типа команды пользователя
-        //Возвращает: "exit", "help", "sortfile", "sortdir" или "UnknownType"
-        private static string GetСommandType(string command)
+        // Возможные типы команд пользователя.
+        private enum СommandType { Exit, Help, Sortfile, Sortdir, UnknownType }
+
+
+        // Метод, отвечающий за определение типа команды пользователя.
+        private static СommandType GetСommandType(string command)
         {
             Regex regExit = new Regex(@"^\s*(exit){1}\s*$");
             Regex regHelp = new Regex(@"^\s*(help){1}\s*$");
             Regex regSortFile = new Regex(@"^\s*(sortfile){1}.*$");
             Regex regSortDir = new Regex(@"^\s*(sortdir){1}.*$");
 
-            string commandType;
-
             if (regExit.IsMatch(command))
-                commandType = "exit";
+                return СommandType.Exit;
             else if (regHelp.IsMatch(command))
-                commandType = "help";
+                return СommandType.Help;
             else if (regSortFile.IsMatch(command))
-                commandType = "sortfile";
+                return СommandType.Sortfile;
             else if (regSortDir.IsMatch(command))
-                commandType = "sortdir";
+                return СommandType.Sortdir;
             else
-                commandType = "UnknownType";
-
-            return commandType;
+                return СommandType.UnknownType;
         }
 
 
-        //Метод, отвечающий за обработку результатов функции сортировки одного файла. Результаты работы выводятся на экран.
+        // Метод, отвечающий за обработку результатов функции сортировки одного файла. Результаты работы выводятся на экран.
         private static void HandleSortIniFileErrors(string error)
         {
             switch (error)
@@ -124,7 +123,7 @@ namespace IniSorter
         }
 
 
-        //Метод, отвечающий за обработку результатов функции сортировки всех файлов в директории. Результаты работы выводятся на экран.
+        // Метод, отвечающий за обработку результатов функции сортировки всех файлов в директории. Результаты работы выводятся на экран.
         private static void HandleSortIniFilesInDirErrors((string globalErrorType, int doneCount, int errorsCount) result)
         {
             switch (result.globalErrorType)
